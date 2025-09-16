@@ -29,12 +29,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-j413y4f_^r-!t&hfkrt!v!cs%%ob@ne6uo3fp9d0(8yic*h@zo"
+SECRET_KEY = env('SECRET_KEY', default="django-insecure-j413y4f_^r-!t&hfkrt!v!cs%%ob@ne6uo3fp9d0(8yic*h@zo")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -63,7 +64,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "alx_travel_app_0x00.urls"
+ROOT_URLCONF = "alx_travel_app.urls"
 
 TEMPLATES = [
     {
@@ -80,17 +81,21 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "alx_travel_app_0x00.wsgi.application"
+WSGI_APPLICATION = "alx_travel_app.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Database configuration with environment variable support
+import dj_database_url
+
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -128,7 +133,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = env('STATIC_ROOT', default=os.path.join(BASE_DIR, 'staticfiles'))
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = env('MEDIA_ROOT', default=os.path.join(BASE_DIR, 'media'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -136,19 +147,24 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # CORS
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = env('DEBUG', default=False, cast=bool)
+if not DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "https://your-frontend-domain.com",
+    ]
+    CORS_ALLOW_CREDENTIALS = True
 
 # Celery Configuration
-CELERY_BROKER_URL = 'amqp://localhost'
-CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://localhost')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='rpc://')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
-# Chapa Payment Gateway Configuration
-CHAPA_SECRET_KEY = env('CHAPA_SECRET_KEY')
-CHAPA_PUBLIC_KEY = env('CHAPA_PUBLIC_KEY')
+# Chapa Payment Gateway Configuration (Optional)
+CHAPA_SECRET_KEY = env('CHAPA_SECRET_KEY', default='')
+CHAPA_PUBLIC_KEY = env('CHAPA_PUBLIC_KEY', default='')
 CHAPA_BASE_URL = env('CHAPA_BASE_URL', default='https://api.chapa.co/v1')
 
 # Email Configuration

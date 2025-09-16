@@ -9,13 +9,13 @@ User = get_user_model()
 @shared_task
 def send_booking_confirmation_email(booking_id):
     """
-    Send booking confirmation email to the user after booking is created.
+    Send booking confirmation email to the user after booking creation.
     """
     try:
         booking = Booking.objects.get(id=booking_id)
         user = booking.user
         
-        subject = f'Booking Confirmation - #{booking.id}'
+        subject = f'Booking Confirmation - Booking #{booking.id}'
         message = f"""
         Dear {user.first_name or user.username},
         
@@ -27,7 +27,7 @@ def send_booking_confirmation_email(booking_id):
         - Check-in: {booking.check_in}
         - Check-out: {booking.check_out}
         - Guests: {booking.guests}
-        - Total Amount: {booking.total_price}
+        - Total Price: ${booking.total_price}
         
         Thank you for choosing ALX Travel App!
         
@@ -49,6 +49,8 @@ def send_booking_confirmation_email(booking_id):
         return f"Booking with ID {booking_id} not found"
     except Exception as e:
         return f"Error sending booking confirmation email: {str(e)}"
+
+
 
 @shared_task
 def send_payment_confirmation_email(payment_id):
